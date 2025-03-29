@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Chat gRPC/WebSocket</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #messages { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        #messageForm { display: flex; margin-bottom: 10px; }
+        #messageInput { flex-grow: 1; margin-right: 10px; }
+        #roomInput { width: 100px; margin-right: 10px; }
+        #historyBtn { margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Client Chat</h1>
+    <div id="messages"></div>
+    <div id="messageForm">
+        <input type="text" id="roomInput" placeholder="Room ID" value="room1">
+        <input type="text" id="messageInput" placeholder="Votre message">
+        <button id="sendBtn">Envoyer</button>
+        <button id="historyBtn">Historique</button>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const roomInput = document.getElementById('roomInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const historyBtn = document.getElementById('historyBtn');
+
+        ws.onopen = () => {
+            addMessage('Connecté au serveur');
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.chat_message) {
+                addMessage(`${data.chat_message.sender_id}: ${data.chat_message.content}`);
+            } else if (data.chat_history) {
+                addMessage('=== Historique ===');
+                data.chat_history.messages.forEach(msg => {
+                    addMessage(`${msg.sender_id}: ${msg.content} (${msg.room_id})`);
+                });
+            } else if (data.error) {
+                addMessage(`Erreur: ${data.error}`);
+            }
+        };
+
+        ws.onclose = () => {
+            addMessage('Déconnecté du serveur');
+        };
+
+        sendBtn.onclick = () => {
+            const message = messageInput.value;
+            const roomId = roomInput.value;
+            if (message && roomId) {
+                ws.send(JSON.stringify({
+                    chat_message: {
+                        id: Date.now().toString(),
+                        room_id: roomId,
+                        sender_id: "web_client",
+                        content: message
+                    }
+                }));
+                messageInput.value = '';
+            }
+        };
+
+        historyBtn.onclick = () => {
+            const roomId = roomInput.value;
+            ws.send(JSON.stringify({
+                get_chat_history: {
+                    room_id: roomId,
+                    limit: 5
+                }
+            }));
+        };
+
+        function addMessage(text) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = text;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
