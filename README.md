@@ -1,139 +1,92 @@
 
-# 🚀 Chat Temps Réel - Architecture gRPC + WebSocket
+# Reverse Proxy WebSocket avec microservice gRPC
 
-![Diagramme d'architecture](docs/architecture.png)
 
-Un système de chat performant combinant la puissance de gRPC pour les microservices et la flexibilité de WebSocket pour les clients web.
+Ce projet illustre l'utilisation de Protocol Buffers (Protobuf) et gRPC pour créer un système de chat avec un reverse proxy WebSocket.
 
-## ✨ Fonctionnalités Avancées
+## 📋 Description
+- **Protobuf** : Format de sérialisation de données structurées multiplateforme
+- **gRPC** : Framework RPC haute performance développé par Google
+- **Fonctionnalités** :
+  - Service de chat avec streaming bidirectionnel
+  - Gestion des utilisateurs
+  - Reverse proxy WebSocket pour l'interfaçage client
 
-| Fonctionnalité | Description | Technologie |
-|----------------|------------|-------------|
-| **Chat temps réel** | Messages instantanés avec latence minimale | WebSocket |
-| **Historique intelligent** | Récupération des messages récents avec pagination | gRPC |
-| **Multi-salles** | Support de plusieurs canaux de discussion | Protobuf |
-| **Presence** | Suivi des utilisateurs connectés | gRPC Stream |
-| **Reconnexion** | Rétablissement automatique de la connexion | WebSocket |
+## ⚙️ Installation
 
-## 🛠 Stack Technique
-
-### Backend
-- **Node.js** (v20+) - Runtime principal
-- **gRPC** (@grpc/grpc-js) - Communication inter-services
-- **Protocol Buffers** - Sérialisation binaire efficace
-
-### Frontend
-- **WebSocket API** - Communication full-duplex
-- **Vanilla JS** - Pas de framework nécessaire
-- **CSS3** - Animations fluides
-
-## � Démarrage Rapide
-
-### Prérequis
-- Node.js v20+
-- NPM v10+
-- Navigateur moderne
-
+1. Cloner le dépôt et installer les dépendances :
 ```bash
-# 1. Cloner le dépôt
-git clone https://github.com/votre-user/grpc-websocket-chat.git
-cd grpc-websocket-chat
-
-# 2. Installer les dépendances
-npm install
-
-# 3. Configurer l'environnement
-cp .env.example .env
+mkdir grpc-ws-reverse-proxy
+cd grpc-ws-reverse-proxy
+npm init -y
+npm install @grpc/grpc-js @grpc/proto-loader ws
 ```
 
-## ▶ Exécution
+## 🏗️ Structure du projet
 
-| Service | Commande | Port | Environnement |
-|---------|----------|------|---------------|
-| Serveur gRPC | `npm run server` | 50051 | Production |
-| Proxy WS | `npm run proxy` | 8080 | Développement |
-| Client | Ouvrir `client.html` | - | - |
+```
+grpc-ws-reverse-proxy/
+├── chat.proto            # Définition des services Protobuf
+├── server.js            # Serveur gRPC
+├── proxy.js             # Reverse proxy WebSocket
+└── package.json
+```
 
-**Scripts utiles :**
+## 🚀 Lancement
+
+1. Démarrer le serveur gRPC :
 ```bash
-npm run dev    # Lance les deux services en mode développement
-npm run test   # Exécute les tests unitaires
+node server.js
 ```
 
-## 📚 Documentation API
-
-### Protobuf Interface
-```protobuf
-service ChatService {
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  rpc JoinChat(JoinRequest) returns (stream ChatMessage);
-  rpc SendMessage(ChatMessage) returns (MessageAck);
-  rpc GetHistory(HistoryRequest) returns (HistoryResponse);
-}
+2. Démarrer le reverse proxy WebSocket :
+```bash
+node proxy.js
 ```
 
-### Messages WebSocket
+## 🔧 Fonctionnement
 
-**Format standard :**
+### Serveur gRPC
+- Écoute sur `0.0.0.0:50051`
+- Implémente 2 méthodes :
+  1. `GetUser` - Récupère les informations d'un utilisateur
+  2. `Chat` - Gère le streaming bidirectionnel de messages
+
+### Reverse Proxy WebSocket
+- Écoute sur `ws://localhost:8080`
+- Relaye les messages entre clients WebSocket et le service gRPC
+
+## 🧪 Test avec Postman
+
+1. Se connecter à `ws://localhost:8080`
+2. Envoyer un message au format JSON :
 ```json
 {
-  "event": "message|join|leave",
-  "data": {
-    "user": "string",
-    "content": "string",
-    "timestamp": "ISO8601"
+  "chat_message": {
+    "id": "msg1",
+    "room_id": "room1",
+    "sender_id": "client1",
+    "content": "Hello World !"
   }
 }
 ```
 
-## 🧪 Tests & Validation
+## 📝 Travail à faire
 
-### Scénarios de test
-1. **Test de charge** :
-   ```bash
-   artillery run load-test.yml
-   ```
+### 1. Historique des messages
+- Ajouter une méthode `GetChatHistory` dans `chat.proto`
+- Implémenter le stockage des messages dans `server.js`
+- Adapter le proxy pour gérer cette nouvelle méthode
 
-2. **Test de résilience** :
-   ```bash
-   npm run stress-test
-   ```
+### 2. Client Web (Bonus)
+Créer une page HTML avec :
+- Formulaire d'envoi de messages
+- Affichage des messages en temps réel
+- Connexion WebSocket à `ws://localhost:8080`
 
-3. **Couverture de code** :
-   ```bash
-   npm run coverage
-   ```
+## 📚 Ressources
+- [Protobuf Documentation](https://developers.google.com/protocol-buffers)
+- [gRPC Documentation](https://grpc.io/docs/)
+- [WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
 
-## 🚀 Déploiement
-
-### Avec Docker
-```bash
-docker-compose up --build -d
-```
-
-### Sur Kubernetes
-```bash
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-```
-
-## 📊 Métriques
-
-Le système expose des métriques Prometheus sur :
-- `/metrics` (serveur gRPC)
-- `/ws-metrics` (proxy WebSocket)
-
-## 🤝 Contribution
-
-1. Forker le projet
-2. Créer une branche (`git checkout -b feat/nouvelle-fonctionnalite`)
-3. Committer (`git commit -am 'Ajout d'une feature'`)
-4. Pusher (`git push origin feat/nouvelle-fonctionnalite`)
-5. Ouvrir une Pull Request
-
-## 📜 Licence
-
-MIT License - Voir [LICENSE](LICENSE) pour plus de détails.
-
-
-
+**Auteure : Rania Mrad**  
