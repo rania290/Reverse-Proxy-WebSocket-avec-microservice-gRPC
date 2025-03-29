@@ -135,13 +135,5 @@ Le système expose des métriques Prometheus sur :
 
 MIT License - Voir [LICENSE](LICENSE) pour plus de détails.
 
----
 
-**Mainteneurs** :
-- [Votre Nom](https://github.com/votre-user)
-- [Collaborateur](https://github.com/collab)
-
-**Version** : 1.0.0  
-**Dernière mise à jour** : ${new Date().toLocaleDateString()}
-```
 
